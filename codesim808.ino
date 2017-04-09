@@ -4,6 +4,7 @@
  *  Implementation:    Rodrigo Alves
  */
 
+
 #include<SoftwareSerial.h>
 
 extern uint8_t SmallFont[];
@@ -13,12 +14,9 @@ extern uint8_t SmallFont[];
 
 SoftwareSerial mySerial(rxPin, txPin);
 
-int8_t answer;
-char aux_str[100];
-
 char url[] = "http://rytmuv2-rytmuv.rhcloud.com/GET_insertgeoPosition/";
-char frame[200];
-char response[100];
+
+char response[200];
 
 char latitude[15];
 char longitude[15];
@@ -81,10 +79,7 @@ void power_on(){
 }
 
 int8_t start_GPS(){
-
-    unsigned long previous;
-
-    previous = millis();
+  
     // starts the GPS
     while(sendATcommand("AT+CGPSPWR=1", "OK", 2000)==0);
     while(sendATcommand("AT+CGPSRST=0", "OK", 2000)==0);
@@ -97,9 +92,11 @@ int8_t start_GPS(){
 }
 
 int8_t get_GPS(){
+    
+    int8_t answer;
     char * auxChar;
     // request Basic string
-    sendATcommand("AT+CGPSINF=0", "OK", 8000);
+    sendATcommand("AT+CGPSINF=0", "O", 8000);
  
    
 
@@ -157,8 +154,11 @@ void sendNMEALocation(char * cellPhoneNumber, char * message)
     
 } 
 
-void send_HTTP(){
-    
+int8_t send_HTTP(){
+  
+    int8_t answer;
+    char aux_str[200];
+    char frame[200];
     // Initializes HTTP service
     answer = sendATcommand("AT+HTTPINIT", "OK", 10000);
     if (answer == 1)
@@ -168,13 +168,13 @@ void send_HTTP(){
         if (answer == 1)
         {
             // Sets url 
-            memset(aux_str, '\0', 100);
+            memset(aux_str, '\0', 200);
             sprintf(aux_str, "AT+HTTPPARA=\"URL\",\"%s", url);
             //limpar antesLIMPAR ANTES
             mySerial.print(aux_str);
             Serial.println(aux_str);
             memset(frame, '\0', 200);
-            sprintf(frame, "?bus_id=1&lat=%s&lon=%s&alt=%s&time=%s&TTFF=%s&sat=%s&speedOTG=%s", latitude, longitude, altitude, date, TTFF, satellites, speedOTG);
+            sprintf(frame, "?bus_id=1&lat=%s&lon=%s&alt=%s&time=%s&TTFF=%s&sat=%s&speedOTG=%s&course=%s", latitude, longitude, altitude, date, TTFF, satellites, speedOTG, course);
             Serial.println(frame);
             mySerial.print(frame);
             
@@ -210,7 +210,7 @@ void send_HTTP(){
     }
 
     sendATcommand("AT+HTTPTERM", "OK", 5000);
-    
+    return answer;
 }
 
 
@@ -218,12 +218,12 @@ int8_t sendATcommand(char* ATcommand, char* expected_answer1, unsigned int timeo
 
     uint8_t x=0,  answer=0;
     unsigned long previous;
-    char readVar[100];
+    char readVar[200];
     char * auxChar;
     
 
-    memset(response, '\0', 100);    // Initialize the string
-    memset(readVar, '\0', 100);    // Initialize the string
+    memset(response, '\0', 200);    // Initialize the string
+    memset(readVar, '\0', 200);    // Initialize the string
 
     while( mySerial.available() > 0) mySerial.read();    // Clean the input buffer
     while( Serial.available() > 0) Serial.read();    // Clean the input buffer
@@ -250,8 +250,7 @@ int8_t sendATcommand(char* ATcommand, char* expected_answer1, unsigned int timeo
                   strcpy (response, auxChar);
                 else
                   strcpy (response, readVar);
-                
-                Serial.println(response);  
+    
                 answer = 1;
             }
         }
@@ -264,3 +263,6 @@ int8_t sendATcommand(char* ATcommand, char* expected_answer1, unsigned int timeo
     
     return answer;
 }
+
+
+    
